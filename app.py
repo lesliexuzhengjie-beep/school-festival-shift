@@ -15,7 +15,34 @@ st.set_page_config(
 
 st.title("🏫 文化祭シフト最適化システム (Streamlit版)")
 st.write("高校生のシフト希望と各部門の条件を考慮して、数理最適化（PuLP）により最適なシフトを自動生成します。")
+# --- 2. 侧边栏（Sidebar）设置 ---
+st.sidebar.header("⚙️ シミュレーション設定")
 
+# 基础参数滑块与输入框
+num_students = st.sidebar.slider("生徒数 (Students)", 50, 150, 80, step=10)
+seed_value = st.sidebar.number_input("乱数シード (Seed)", value=10, step=1)
+
+# --- 3. 新增：将 Excel 中的制约条件展示在侧边栏 ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📋 Excel制約条件プレビュー")
+
+# 模拟从 Excel（如：高大連携.xlsx）中读取的“部門の条件”数据
+# 如果你已经用 pandas 读取了 Excel，可以直接用你的 df 替代这里的数据
+dept_data = {
+    "部門名": ["部門1", "部門2", "部門3", "部門4", "部門5", "部門6", "部門7"],
+    "時間1": [3, 2, 3, 2, 3, 2, 3],
+    "時間2": [3, 2, 3, 2, 3, 2, 3],
+    "時間3": [3, 2, 3, 2, 3, 2, 3],
+}
+df_dept_preview = pd.DataFrame(dept_data)
+
+# 使用折叠面板（expander），既能展示详细表格又不会让侧边栏显得太长
+with st.sidebar.expander("🔍 各部門の必要人数を見る"):
+    st.markdown("各時間帯における各部門の必要人数設定：")
+    # 在侧边栏展示这个制约条件小表格
+    st.dataframe(df_dept_preview, use_container_width=True)
+
+st.sidebar.text(f"総部門数: {len(df_dept_preview)} 箇所")
 # ==========================================
 # 2. 人工データ生成および最適化関数の定義
 # ==========================================
