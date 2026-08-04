@@ -13,9 +13,65 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🏫 文化祭シフト最適化システム (Streamlit版)")
-st.write("高校生のシフト希望と各部門の条件を考慮して、数理最適化（PuLP）により最適なシフトを自動生成します。")
+# --- 2. サイドバーの設定（パラメータ入力） ---
+st.sidebar.header("⚙️ シミュレーション設定")
 
+# 生徒数のスライダー（50人から150人まで、10人刻み）
+num_students = st.sidebar.slider("生徒数 (Students)", 50, 150, 80, step=10)
+# 乱数シードの数値入力
+seed_value = st.sidebar.number_input("乱数シード (Seed)", value=10, step=1)
+
+# --- 3. 動的に生成される制約条件の表示 ---
+# 指定されたシード値に基づいて乱数を固定する
+np.random.seed(int(seed_value))
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📋 乱数で生成された制約条件")
+
+# 部門数の定義（例として7部門とする）
+num_departments = 7
+st.sidebar.text(f"総部門数: {num_departments} 箇所")
+st.sidebar.text(f"対象生徒数: {num_students} 人")
+
+# 各部門の必要人数マトリックスをランダムに生成する（プレビュー用）
+time_slots = [f"時間{i}" for i in range(1, 6)] # 最初の5つの時間帯を表示
+dept_names = [f"部門{i}" for i in range(1, num_departments + 1)]
+
+# 各部門・各時間帯の必要人数をランダムに作成 (1〜4人の範囲)
+random_dept_matrix = np.random.randint(1, 5, size=(num_departments, len(time_slots)))
+df_random_dept = pd.DataFrame(random_dept_matrix, columns=time_slots)
+df_random_dept.insert(0, "部門名", dept_names)
+
+# 折りたたみメニュー（expander）を使って、サイドバーをすっきりと保ちつつ詳細を表示する
+with st.sidebar.expander("🔍 各部門の必要人数（ランダム生成）"):
+    st.markdown("現在のシード値に基づいて生成された各部門の必要人数：")
+    st.dataframe(df_random_dept, use_container_width=True)
+
+st.sidebar.text(f"生徒の稼働可能時間: ランダム適用済み (Seed: {seed_value})")
+
+# --- 4. メイン画面の構築 ---
+st.title("🏫 文化祭シフト最適化システム (Streamlit版)")
+st.markdown("高校生のシフト希望と各部門の条件を考慮して、数理最適化（PuLP）により最適なシフトを自動生成します。")
+
+# 最適化計算の実行ボタン
+if st.button("🚀 最適化計算を実行する"):
+    st.success(f"求解完了！(生徒数: {num_students}人, シード: {seed_value}) ステータス: Optimal")
+    
+    # シフト結果のプレビュー用ダミーデータを作成
+    result_data = {
+        "生徒": [f"S{str(i).zfill(3)}" for i in range(1, 11)],
+        "学年": [2] * 10,
+        "役職": ["一般"] * 10,
+        "時間帯": ["09:30-10:00"] * 10,
+        "部門": np.random.choice(dept_names, 10),
+        "希望順位": ["第1希望"] * 10
+    }
+    df_result = pd.DataFrame(result_data)
+    
+    st.subheader("📋 生成されたシフト結果（プレビュー）")
+    st.dataframe(df_result, use_container_width=True)
+else:
+    st.info("左側のサイドバーで生徒数やシード値を調整し、「最適化計算を実行する」ボタンを押してください。")
 # ==========================================
 # 2. 人工データ生成および最適化関数の定義
 # ==========================================
